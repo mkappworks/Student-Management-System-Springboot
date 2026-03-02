@@ -1,0 +1,60 @@
+{
+  "title": "SMS - Microservices Overview",
+  "uid": "sms-overview",
+  "version": 1,
+  "schemaVersion": 38,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "HTTP Request Rate (req/s)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [{
+        "expr": "sum(rate(http_server_requests_seconds_count[5m])) by (job)",
+        "legendFormat": "{{job}}"
+      }]
+    },
+    {
+      "id": 2,
+      "title": "Error Rate (4xx + 5xx)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [{
+        "expr": "sum(rate(http_server_requests_seconds_count{status=~\"[45]..\"}[5m])) by (job)",
+        "legendFormat": "{{job}} errors"
+      }]
+    },
+    {
+      "id": 3,
+      "title": "JVM Heap Memory Used (MB)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [{
+        "expr": "jvm_memory_used_bytes{area=\"heap\"} / 1048576",
+        "legendFormat": "{{job}} heap"
+      }]
+    },
+    {
+      "id": 4,
+      "title": "Active DB Connections",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [{
+        "expr": "hikaricp_connections_active",
+        "legendFormat": "{{job}}"
+      }]
+    },
+    {
+      "id": 5,
+      "title": "P99 Response Time (ms)",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+      "targets": [{
+        "expr": "histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket[5m])) by (job, le)) * 1000",
+        "legendFormat": "{{job}} p99"
+      }]
+    }
+  ]
+}

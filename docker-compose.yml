@@ -1,0 +1,398 @@
+version: '3.8'
+
+x-service-defaults: &service-defaults
+  restart: unless-stopped
+  networks:
+    - sms-network
+
+x-db-defaults: &db-defaults
+  image: postgres:16-alpine
+  restart: unless-stopped
+  networks:
+    - sms-network
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U postgres"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+
+services:
+  # ============================================================
+  # DATABASES
+  # ============================================================
+  postgres-student:
+    <<: *db-defaults
+    container_name: postgres-student
+    environment:
+      POSTGRES_DB: student_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_student_data:/var/lib/postgresql/data
+
+  postgres-teacher:
+    <<: *db-defaults
+    container_name: postgres-teacher
+    environment:
+      POSTGRES_DB: teacher_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_teacher_data:/var/lib/postgresql/data
+
+  postgres-grade:
+    <<: *db-defaults
+    container_name: postgres-grade
+    environment:
+      POSTGRES_DB: grade_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_grade_data:/var/lib/postgresql/data
+
+  postgres-enrollment:
+    <<: *db-defaults
+    container_name: postgres-enrollment
+    environment:
+      POSTGRES_DB: enrollment_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_enrollment_data:/var/lib/postgresql/data
+
+  postgres-notification:
+    <<: *db-defaults
+    container_name: postgres-notification
+    environment:
+      POSTGRES_DB: notification_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5436:5432"
+    volumes:
+      - postgres_notification_data:/var/lib/postgresql/data
+
+  postgres-module:
+    <<: *db-defaults
+    container_name: postgres-module
+    environment:
+      POSTGRES_DB: module_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5437:5432"
+    volumes:
+      - postgres_module_data:/var/lib/postgresql/data
+
+  postgres-auth:
+    <<: *db-defaults
+    container_name: postgres-auth
+    environment:
+      POSTGRES_DB: auth_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5438:5432"
+    volumes:
+      - postgres_auth_data:/var/lib/postgresql/data
+
+  # ============================================================
+  # INFRASTRUCTURE
+  # ============================================================
+  service-registry:
+    <<: *service-defaults
+    build:
+      context: .
+      dockerfile: service-registry/Dockerfile
+    container_name: service-registry
+    ports:
+      - "8761:8761"
+    environment:
+      - LOKI_HOST=loki
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8761/actuator/health"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+
+  api-gateway:
+    <<: *service-defaults
+    build:
+      context: .
+      dockerfile: api-gateway/Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - EUREKA_HOST=service-registry
+      - EUREKA_PORT=8761
+      - JWT_SECRET=${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      - LOKI_HOST=loki
+      - TEMPO_HOST=tempo
+    depends_on:
+      service-registry:
+        condition: service_healthy
+
+  # ============================================================
+  # MICROSERVICES
+  # ============================================================
+  student-service:
+    <<: *service-defaults
+    build:
+      context: .
+      dockerfile: student-service/Dockerfile
+    container_name: student-service
+    ports:
+      - "8081:8081"
+    environment:
+      - DB_HOST=postgres-student
+      - DB_PORT=5432
+      - DB_NAME=student_db
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - EUREKA_HOST=service-registry
+      - EUREKA_PORT=8761
+      - JWT_SECRET=${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      - LOKI_HOST=loki
+      - TEMPO_HOST=tempo
+    depends_on:
+      postgres-student:
+        condition: service_healthy
+      service-registry:
+        condition: service_healthy
+
+  teacher-service:
+    <<: *service-defaults
+    build:
+      context: .
+      dockerfile: teacher-service/Dockerfile
+    container_name: teacher-service
+    ports:
+      - "8082:8082"
+    environment:
+      - DB_HOST=postgres-teacher
+      - DB_PORT=5432
+      - DB_NAME=teacher_db
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - EUREKA_HOST=service-registry
+      - EUREKA_PORT=8761
+      - JWT_SECRET=${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      - LOKI_HOST=loki
+      - TEMPO_HOST=tempo
+    depends_on:
+      postgres-teacher:
+        condition: service_healthy
+      service-registry:
+        condition: service_healthy
+
+  grade-service:
+    <<: *service-defaults
+    build:
+      context: .
+      dockerfile: grade-service/Dockerfile
+    container_name: grade-service
+    ports:
+      - "8083:8083"
+    environment:
+      - DB_HOST=postgres-grade
+      - DB_PORT=5432
+      - DB_NAME=grade_db
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - EUREKA_HOST=service-registry
+      - EUREKA_PORT=8761
+      - JWT_SECRET=${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      - LOKI_HOST=loki
+      - TEMPO_HOST=tempo
+    depends_on:
+      postgres-grade:
+        condition: service_healthy
+      service-registry:
+        condition: service_healthy
+
+  enrollment-service:
+    <<: *service-defaults
+    build:
+      context: .
+      dockerfile: enrollment-service/Dockerfile
+    container_name: enrollment-service
+    ports:
+      - "8084:8084"
+    environment:
+      - DB_HOST=postgres-enrollment
+      - DB_PORT=5432
+      - DB_NAME=enrollment_db
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - EUREKA_HOST=service-registry
+      - EUREKA_PORT=8761
+      - JWT_SECRET=${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      - LOKI_HOST=loki
+      - TEMPO_HOST=tempo
+    depends_on:
+      postgres-enrollment:
+        condition: service_healthy
+      service-registry:
+        condition: service_healthy
+
+  notification-service:
+    <<: *service-defaults
+    build:
+      context: .
+      dockerfile: notification-service/Dockerfile
+    container_name: notification-service
+    ports:
+      - "8085:8085"
+    environment:
+      - DB_HOST=postgres-notification
+      - DB_PORT=5432
+      - DB_NAME=notification_db
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - EUREKA_HOST=service-registry
+      - EUREKA_PORT=8761
+      - JWT_SECRET=${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      - LOKI_HOST=loki
+      - TEMPO_HOST=tempo
+    depends_on:
+      postgres-notification:
+        condition: service_healthy
+      service-registry:
+        condition: service_healthy
+
+  module-service:
+    <<: *service-defaults
+    build:
+      context: .
+      dockerfile: module-service/Dockerfile
+    container_name: module-service
+    ports:
+      - "8086:8086"
+    environment:
+      - DB_HOST=postgres-module
+      - DB_PORT=5432
+      - DB_NAME=module_db
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - EUREKA_HOST=service-registry
+      - EUREKA_PORT=8761
+      - JWT_SECRET=${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      - LOKI_HOST=loki
+      - TEMPO_HOST=tempo
+    depends_on:
+      postgres-module:
+        condition: service_healthy
+      service-registry:
+        condition: service_healthy
+
+
+  auth-service:
+    <<: *service-defaults
+    build:
+      context: .
+      dockerfile: auth-service/Dockerfile
+    container_name: auth-service
+    ports:
+      - "8090:8090"
+    environment:
+      - DB_HOST=postgres-auth
+      - DB_PORT=5432
+      - DB_NAME=auth_db
+      - DB_USERNAME=postgres
+      - DB_PASSWORD=postgres
+      - EUREKA_HOST=service-registry
+      - EUREKA_PORT=8761
+      - JWT_SECRET=${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      - LOKI_HOST=loki
+      - TEMPO_HOST=tempo
+    depends_on:
+      postgres-auth:
+        condition: service_healthy
+      service-registry:
+        condition: service_healthy
+
+  # ============================================================
+  # MONITORING
+  # ============================================================
+  prometheus:
+    <<: *service-defaults
+    image: prom/prometheus:v2.50.1
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.enable-lifecycle'
+
+  loki:
+    <<: *service-defaults
+    image: grafana/loki:2.9.4
+    container_name: loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki/loki-config.yml:/etc/loki/config.yml:ro
+      - loki_data:/tmp/loki
+    command: -config.file=/etc/loki/config.yml
+
+  tempo:
+    <<: *service-defaults
+    image: grafana/tempo:2.4.1
+    container_name: tempo
+    ports:
+      - "3200:3200"
+      - "9411:9411"
+    volumes:
+      - ./monitoring/tempo/tempo-config.yml:/etc/tempo/config.yml:ro
+      - tempo_data:/tmp/tempo
+    command: -config.file=/etc/tempo/config.yml
+
+  grafana:
+    <<: *service-defaults
+    image: grafana/grafana:10.3.3
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+      - loki
+      - tempo
+
+networks:
+  sms-network:
+    driver: bridge
+
+volumes:
+  postgres_student_data:
+  postgres_teacher_data:
+  postgres_grade_data:
+  postgres_enrollment_data:
+  postgres_notification_data:
+  postgres_auth_data:
+  postgres_module_data:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+  tempo_data:
