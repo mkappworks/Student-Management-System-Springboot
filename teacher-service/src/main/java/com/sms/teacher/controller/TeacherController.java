@@ -26,16 +26,19 @@ public class TeacherController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
     public ResponseEntity<TeacherResponse> getById(@PathVariable Long id) {
         return ResponseEntity.ok(teacherService.getTeacherById(id));
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     public ResponseEntity<Page<TeacherResponse>> getAll(Pageable pageable) {
         return ResponseEntity.ok(teacherService.getAllTeachers(pageable));
     }
 
     @GetMapping("/search")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
     public ResponseEntity<Page<TeacherResponse>> search(@RequestParam String query, Pageable pageable) {
         return ResponseEntity.ok(teacherService.searchTeachers(query, pageable));
     }
