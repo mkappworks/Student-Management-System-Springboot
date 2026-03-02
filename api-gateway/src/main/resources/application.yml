@@ -1,0 +1,90 @@
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: auth-service
+          uri: lb://auth-service
+          predicates:
+            - Path=/api/v1/auth/**
+
+        - id: student-service
+          uri: lb://student-service
+          predicates:
+            - Path=/api/v1/students/**
+
+        - id: teacher-service
+          uri: lb://teacher-service
+          predicates:
+            - Path=/api/v1/teachers/**
+
+        - id: module-service
+          uri: lb://module-service
+          predicates:
+            - Path=/api/v1/modules/**
+
+        - id: grade-service
+          uri: lb://grade-service
+          predicates:
+            - Path=/api/v1/grades/**
+
+        - id: enrollment-service
+          uri: lb://enrollment-service
+          predicates:
+            - Path=/api/v1/enrollments/**
+
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/v1/notifications/**
+
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods: "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+            allowedHeaders: "*"
+            exposedHeaders: "Authorization"
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://${EUREKA_HOST:localhost}:${EUREKA_PORT:8761}/eureka/
+  instance:
+    prefer-ip-address: true
+
+application:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,gateway,metrics
+  endpoint:
+    health:
+      show-details: always
+  prometheus:
+    metrics:
+      export:
+        enabled: true
+  tracing:
+    sampling:
+      probability: 1.0
+  zipkin:
+    tracing:
+      endpoint: http://${TEMPO_HOST:tempo}:9411/api/v2/spans
+
+logging:
+  level:
+    org.springframework.cloud.gateway: DEBUG
