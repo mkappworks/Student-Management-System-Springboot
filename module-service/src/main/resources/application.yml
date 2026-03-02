@@ -58,4 +58,4 @@ management:
 
 logging:
   level:
-    com.sms: DEBUG
+    com.mkappworks: DEBUG
