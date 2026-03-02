@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.mkappworks</groupId>
-        <artifactId>student-management-system</artifactId>
+        <artifactId>Student-Management-System-Springboot</artifactId>
         <version>1.0.0</version>
     </parent>
     <artifactId>api-gateway</artifactId>
