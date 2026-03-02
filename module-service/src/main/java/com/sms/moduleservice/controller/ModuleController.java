@@ -72,12 +72,14 @@ public class ModuleController {
     }
 
     @PostMapping("/{id}/enroll")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
     public ResponseEntity<Void> incrementEnrollment(@PathVariable UUID id) {
         moduleService.incrementEnrollment(id);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{id}/unenroll")
+    @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
     public ResponseEntity<Void> decrementEnrollment(@PathVariable UUID id) {
         moduleService.decrementEnrollment(id);
         return ResponseEntity.ok().build();
