@@ -1,0 +1,33 @@
+# Build output
+**/target/
+**/*.class
+**/*.jar
+**/*.war
+
+# IDE & editor config
+.idea/
+**/*.iml
+**/*.iws
+**/*.ipr
+.vscode/
+**/.classpath
+**/.project
+**/.settings/
+**/.springBeans
+
+# Environment & secrets
+.env
+
+# Logs
+**/*.log
+**/logs/
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Docker volumes / data dirs
+docker-data/
+
+# Monitoring provisioned assets (large generated JSONs, not source code)
+monitoring/grafana/provisioning/
