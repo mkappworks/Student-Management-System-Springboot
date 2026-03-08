@@ -3,7 +3,7 @@ package com.mkappworks.student.service;
 import com.mkappworks.student.dto.AuthRequest;
 import com.mkappworks.student.dto.AuthResponse;
 import com.mkappworks.student.dto.RegisterRequest;
-import com.mkappworks.student.exception.DuplicateResourceException;
+import com.mkappworks.common.exception.DuplicateResourceException;
 import com.mkappworks.student.model.User;
 import com.mkappworks.student.repository.UserRepository;
 import com.mkappworks.student.security.JwtService;

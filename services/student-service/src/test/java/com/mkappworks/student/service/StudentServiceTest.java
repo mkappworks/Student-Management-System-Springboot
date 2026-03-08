@@ -2,8 +2,8 @@ package com.mkappworks.student.service;
 
 import com.mkappworks.student.dto.StudentRequest;
 import com.mkappworks.student.dto.StudentResponse;
-import com.mkappworks.student.exception.DuplicateResourceException;
-import com.mkappworks.student.exception.ResourceNotFoundException;
+import com.mkappworks.common.exception.DuplicateResourceException;
+import com.mkappworks.common.exception.ResourceNotFoundException;
 import com.mkappworks.student.model.Student;
 import com.mkappworks.student.repository.StudentRepository;
 import org.junit.jupiter.api.BeforeEach;

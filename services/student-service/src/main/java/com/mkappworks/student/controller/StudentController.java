@@ -1,6 +1,6 @@
 package com.mkappworks.student.controller;
 
-import com.mkappworks.student.dto.ApiResponse;
+import com.mkappworks.common.dto.ApiResponse;
 import com.mkappworks.student.dto.StudentRequest;
 import com.mkappworks.student.dto.StudentResponse;
 import com.mkappworks.student.model.Student;

@@ -3,18 +3,24 @@ package com.mkappworks.student.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mkappworks.student.dto.StudentRequest;
 import com.mkappworks.student.dto.StudentResponse;
-import com.mkappworks.student.exception.ResourceNotFoundException;
+import com.mkappworks.common.exception.ResourceNotFoundException;
 import com.mkappworks.student.model.Student;
 import com.mkappworks.student.repository.UserRepository;
 import com.mkappworks.student.security.JwtAuthenticationFilter;
 import com.mkappworks.student.security.JwtService;
+import com.mkappworks.common.exception.GlobalExceptionHandler;
+import com.mkappworks.student.config.SecurityConfig;
 import com.mkappworks.student.service.StudentService;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletRequest;
+import jakarta.servlet.ServletResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
@@ -45,6 +51,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *   JwtService               → @MockBean  (JwtAuthenticationFilter constructor arg — unused at runtime)
  */
 @WebMvcTest(controllers = StudentController.class)
+@Import({SecurityConfig.class, GlobalExceptionHandler.class})
 @DisplayName("StudentController Web Layer Tests")
 class StudentControllerTest {
 
@@ -62,7 +69,17 @@ class StudentControllerTest {
     private StudentResponse studentResponse;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
+        // JwtAuthenticationFilter is mocked; Mockito 5 (inline mode) mocks even final methods,
+        // so doFilter() becomes a no-op that blocks the chain. Configure it to pass through.
+        doAnswer(inv -> {
+            ((FilterChain) inv.getArgument(2)).doFilter(
+                    (ServletRequest) inv.getArgument(0),
+                    (ServletResponse) inv.getArgument(1));
+            return null;
+        }).when(jwtAuthenticationFilter).doFilter(
+                any(ServletRequest.class), any(ServletResponse.class), any(FilterChain.class));
+
         validRequest = StudentRequest.builder()
                 .firstName("Jane").lastName("Smith")
                 .email("jane.smith@test.com")

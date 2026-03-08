@@ -1,6 +1,6 @@
 package com.mkappworks.student.controller;
 
-import com.mkappworks.student.dto.ApiResponse;
+import com.mkappworks.common.dto.ApiResponse;
 import com.mkappworks.student.dto.AuthRequest;
 import com.mkappworks.student.dto.AuthResponse;
 import com.mkappworks.student.dto.RegisterRequest;
