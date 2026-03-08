@@ -6,18 +6,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```bash
 # Build all services (skip tests)
-mvn clean package -DskipTests
+mvn -f services/pom.xml clean package -DskipTests
 # or
 make build
 
 # Run all unit tests (across all services)
-mvn test
+mvn -f services/pom.xml test
 
 # Run a single service's tests
-cd student-service && mvn test
+cd services/student-service && mvn test
 
 # Run integration tests (requires Docker for Testcontainers)
-mvn verify
+mvn -f services/pom.xml verify
 
 # Full Docker stack
 make up           # start all services
@@ -106,8 +106,8 @@ cp .env.example .env  # JWT_SECRET, DB passwords, Grafana password
 make up-infra
 
 # Then run services individually
-cd auth-service && mvn spring-boot:run
-cd student-service && mvn spring-boot:run
+cd services/auth-service && mvn spring-boot:run
+cd services/student-service && mvn spring-boot:run
 # ... etc, start api-gateway last
 ```
 

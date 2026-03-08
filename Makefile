@@ -11,15 +11,15 @@ help: ## Show this help
 
 build: ## Build all services (skip tests)
 	@echo "$(GREEN)Building all services...$(RESET)"
-	mvn clean package -DskipTests
+	mvn -f services/pom.xml clean package -DskipTests
 
 test: ## Run all unit tests
 	@echo "$(GREEN)Running unit tests...$(RESET)"
-	mvn test
+	mvn -f services/pom.xml test
 
 test-integration: ## Run integration tests (requires Docker)
 	@echo "$(GREEN)Running integration tests...$(RESET)"
-	mvn verify
+	mvn -f services/pom.xml verify
 
 up: ## Start all services with Docker Compose
 	@echo "$(GREEN)Starting all services...$(RESET)"
@@ -55,7 +55,7 @@ rebuild: ## Rebuild and restart a specific service (usage: make rebuild SVC=stud
 	docker compose up -d --build --no-deps $(SVC)
 
 clean: ## Clean Maven build artifacts
-	mvn clean
+	mvn -f services/pom.xml clean
 
 health: ## Check health of all services
 	@echo "$(GREEN)Checking service health...$(RESET)"
