@@ -111,7 +111,7 @@ services:
     <<: *service-defaults
     build:
       context: .
-      dockerfile: service-registry/Dockerfile
+      dockerfile: services/service-registry/Dockerfile
     container_name: service-registry
     ports:
       - "8761:8761"
@@ -128,7 +128,7 @@ services:
     <<: *service-defaults
     build:
       context: .
-      dockerfile: api-gateway/Dockerfile
+      dockerfile: services/api-gateway/Dockerfile
     container_name: api-gateway
     ports:
       - "8080:8080"
@@ -149,7 +149,7 @@ services:
     <<: *service-defaults
     build:
       context: .
-      dockerfile: student-service/Dockerfile
+      dockerfile: services/student-service/Dockerfile
     container_name: student-service
     ports:
       - "8081:8081"
@@ -174,7 +174,7 @@ services:
     <<: *service-defaults
     build:
       context: .
-      dockerfile: teacher-service/Dockerfile
+      dockerfile: services/teacher-service/Dockerfile
     container_name: teacher-service
     ports:
       - "8082:8082"
@@ -199,7 +199,7 @@ services:
     <<: *service-defaults
     build:
       context: .
-      dockerfile: grade-service/Dockerfile
+      dockerfile: services/grade-service/Dockerfile
     container_name: grade-service
     ports:
       - "8083:8083"
@@ -224,7 +224,7 @@ services:
     <<: *service-defaults
     build:
       context: .
-      dockerfile: enrollment-service/Dockerfile
+      dockerfile: services/enrollment-service/Dockerfile
     container_name: enrollment-service
     ports:
       - "8084:8084"
@@ -249,7 +249,7 @@ services:
     <<: *service-defaults
     build:
       context: .
-      dockerfile: notification-service/Dockerfile
+      dockerfile: services/notification-service/Dockerfile
     container_name: notification-service
     ports:
       - "8085:8085"
@@ -274,7 +274,7 @@ services:
     <<: *service-defaults
     build:
       context: .
-      dockerfile: module-service/Dockerfile
+      dockerfile: services/module-service/Dockerfile
     container_name: module-service
     ports:
       - "8086:8086"
@@ -300,7 +300,7 @@ services:
     <<: *service-defaults
     build:
       context: .
-      dockerfile: auth-service/Dockerfile
+      dockerfile: services/auth-service/Dockerfile
     container_name: auth-service
     ports:
       - "8090:8090"
