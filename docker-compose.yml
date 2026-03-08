@@ -322,6 +322,23 @@ services:
         condition: service_healthy
 
   # ============================================================
+  # FRONTEND
+  # ============================================================
+  web:
+    <<: *service-defaults
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: web
+    ports:
+      - "3001:3000"
+    environment:
+      - PORT=3000
+      - VITE_API_URL=http://localhost:8080
+    depends_on:
+      - api-gateway
+
+  # ============================================================
   # MONITORING
   # ============================================================
   prometheus:

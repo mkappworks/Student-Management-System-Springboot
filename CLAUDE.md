@@ -27,6 +27,7 @@ make down-volumes # stop and remove volumes (full reset)
 
 # Rebuild a single service in Docker
 make rebuild SVC=student-service
+make rebuild SVC=web
 
 # Tail logs
 make logs
@@ -35,6 +36,30 @@ make logs-svc SVC=student-service
 # Health check all services
 make health
 ```
+
+## Frontend (web/)
+
+React Router v7 SPA/SSR frontend built with Vite, Tailwind CSS v4, and shadcn/ui.
+
+```bash
+# Install dependencies
+make web-install       # or: cd web && bun install
+
+# Dev server (http://localhost:5173)
+make web-dev           # or: cd web && bun dev
+
+# Production build
+make web-build         # or: cd web && bun run build
+
+# Type check
+cd web && bun run typecheck
+
+# Format
+cd web && bun run format
+```
+
+Key env vars for the frontend (create `web/.env`):
+- `VITE_API_URL` — API gateway base URL (default: `http://localhost:8080`)
 
 ## Architecture Overview
 
@@ -70,19 +95,21 @@ Each domain service follows the same layered structure:
 - JPA `ddl-auto: validate` — schema changes must go through Flyway migrations.
 
 ### Service Ports
-| Service           | Port |
-|-------------------|------|
-| service-registry  | 8761 |
-| api-gateway       | 8080 |
-| auth-service      | 8090 |
-| student-service   | 8081 |
-| teacher-service   | 8082 |
-| module-service    | 8086 |
-| grade-service     | 8083 |
-| enrollment-service| 8084 |
-| notification-service| 8085 |
-| Prometheus        | 9090 |
-| Grafana           | 3000 |
+| Service              | Port |
+|----------------------|------|
+| service-registry     | 8761 |
+| api-gateway          | 8080 |
+| auth-service         | 8090 |
+| student-service      | 8081 |
+| teacher-service      | 8082 |
+| module-service       | 8086 |
+| grade-service        | 8083 |
+| enrollment-service   | 8084 |
+| notification-service | 8085 |
+| web (Docker)         | 3001 |
+| web (dev server)     | 5173 |
+| Prometheus           | 9090 |
+| Grafana              | 3000 |
 
 ## Key Conventions
 

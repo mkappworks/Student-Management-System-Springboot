@@ -1,47 +1,50 @@
 # Student Management System — Microservices
 
-A production-ready **Spring Boot 3.5 / Java 21** microservices application for managing students, teachers, modules, enrollments, and grades. Built with Spring Cloud, PostgreSQL, JWT security, Docker Compose, Prometheus, and Grafana.
+A production-ready **Spring Boot 3.5 / Java 21** microservices application for managing students, teachers, modules, enrollments, and grades. Includes a **React Router v7** frontend. Built with Spring Cloud, PostgreSQL, JWT security, Docker Compose, Prometheus, and Grafana.
 
 ---
 
 ## Architecture
 
 ```
-                          ┌────────────────┐
-                          │  Eureka Server │
-                          │   :8761        │
-                          └───────┬────────┘
-                                  │  Service Discovery
-         ┌────────────────────────┼────────────────────────┐
-         │                        │                        │
-  ┌──────▼──────┐          ┌──────▼──────────────────────────────────────┐
-  │  API Gateway│          │               Microservices                  │
-  │   :8080     │──────►   │  Auth      :8090  │  Student   :8081        │
-  └─────────────┘          │  Teacher   :8082  │  Module    :8086        │
-                           │  Grade     :8083  │  Enrollment :8084       │
-                           │  Notification :8085                         │
-                           └─────────────────────────────────────────────┘
-         │
-  ┌──────▼──────────────────┐
-  │       Monitoring         │
-  │  Prometheus :9090        │
-  │  Grafana    :3000        │
-  └──────────────────────────┘
+  ┌──────────────────────┐
+  │  Web Frontend :3001  │  (React Router v7 / Vite / Tailwind)
+  └──────────┬───────────┘
+             │ HTTP
+  ┌──────────▼───────────┐       ┌────────────────┐
+  │     API Gateway      │       │  Eureka Server │
+  │        :8080         │◄─────►│     :8761      │
+  └──────────┬───────────┘       └────────────────┘
+             │  JWT validated + header injected
+  ┌──────────▼─────────────────────────────────────┐
+  │                 Microservices                   │
+  │  Auth      :8090  │  Student   :8081            │
+  │  Teacher   :8082  │  Module    :8086            │
+  │  Grade     :8083  │  Enrollment :8084           │
+  │  Notification :8085                             │
+  └─────────────────────────────────────────────────┘
+             │
+  ┌──────────▼──────────────────┐
+  │         Monitoring           │
+  │  Prometheus :9090            │
+  │  Grafana    :3000            │
+  └──────────────────────────────┘
 ```
 
 ### Services
 
-| Service            | Port | Description                                  |
-|--------------------|------|----------------------------------------------|
-| service-registry   | 8761 | Eureka service discovery                     |
-| api-gateway        | 8080 | JWT-validating API gateway (Spring Cloud GW) |
-| auth-service       | 8090 | User registration, login, JWT issuance       |
-| student-service    | 8081 | Student CRUD, search, status management      |
-| teacher-service    | 8082 | Teacher CRUD, department management          |
-| module-service     | 8086 | Module (course) management with capacity     |
-| grade-service      | 8083 | Grade recording with letter-grade calculation|
-| enrollment-service | 8084 | Student-module enrollment management         |
-| notification-service| 8085| In-app / email notifications                 |
+| Service              | Port | Description                                  |
+|----------------------|------|----------------------------------------------|
+| web                  | 3001 | React Router v7 frontend (Docker) / 5173 dev |
+| service-registry     | 8761 | Eureka service discovery                     |
+| api-gateway          | 8080 | JWT-validating API gateway (Spring Cloud GW) |
+| auth-service         | 8090 | User registration, login, JWT issuance       |
+| student-service      | 8081 | Student CRUD, search, status management      |
+| teacher-service      | 8082 | Teacher CRUD, department management          |
+| module-service       | 8086 | Module (course) management with capacity     |
+| grade-service        | 8083 | Grade recording with letter-grade calculation|
+| enrollment-service   | 8084 | Student-module enrollment management         |
+| notification-service | 8085 | In-app / email notifications                 |
 
 ---
 
@@ -83,6 +86,7 @@ Auth Service SecurityConfig  ←  "Load the user, check the password, issue a JW
 
 ## Technology Stack
 
+### Backend
 - **Java 21** with virtual threads
 - **Spring Boot 3.5.11** — Web, Data JPA, Security, Validation, Actuator
 - **Spring Cloud 2025.0.0** — Gateway, Eureka, OpenFeign
@@ -94,6 +98,14 @@ Auth Service SecurityConfig  ←  "Load the user, check the password, issue a JW
 - **Testcontainers** — integration tests with real PostgreSQL
 - **Lombok** — boilerplate reduction
 
+### Frontend
+- **React 19** + **React Router v7** — file-based routing with SSR support
+- **TypeScript 5** — type safety
+- **Vite 7** — build tooling
+- **Tailwind CSS v4** — utility-first styling
+- **shadcn/ui** + **Base UI** — component library
+- **Bun** — package manager and runtime
+
 ---
 
 ## Prerequisites
@@ -101,6 +113,7 @@ Auth Service SecurityConfig  ←  "Load the user, check the password, issue a JW
 - Java 21+
 - Maven 3.9+
 - Docker Desktop / Docker Engine 24+
+- Bun (for frontend development)
 - Make (optional, for convenience commands)
 
 ---
@@ -128,7 +141,7 @@ docker compose up -d
 docker compose logs -f
 ```
 
-All 18 containers (7 databases + 9 services + Prometheus + Grafana) will start. First run takes ~3–5 minutes.
+All 19 containers (7 databases + 9 services + web frontend + Prometheus + Grafana) will start. First run takes ~3–5 minutes.
 
 ### 2 — Option B: Local development (databases in Docker, services local)
 
@@ -139,14 +152,17 @@ docker compose up -d postgres-student postgres-teacher postgres-grade \
   service-registry
 
 # Run services locally (one terminal each)
-cd auth-service       && mvn spring-boot:run
-cd student-service    && mvn spring-boot:run
-cd teacher-service    && mvn spring-boot:run
-cd module-service     && mvn spring-boot:run
-cd grade-service      && mvn spring-boot:run
-cd enrollment-service && mvn spring-boot:run
-cd notification-service && mvn spring-boot:run
-cd api-gateway        && mvn spring-boot:run  # start last
+cd services/auth-service       && mvn spring-boot:run
+cd services/student-service    && mvn spring-boot:run
+cd services/teacher-service    && mvn spring-boot:run
+cd services/module-service     && mvn spring-boot:run
+cd services/grade-service      && mvn spring-boot:run
+cd services/enrollment-service && mvn spring-boot:run
+cd services/notification-service && mvn spring-boot:run
+cd services/api-gateway        && mvn spring-boot:run  # start last
+
+# Run frontend dev server (separate terminal)
+make web-dev           # http://localhost:5173
 ```
 
 ---
@@ -291,6 +307,8 @@ curl -H "Authorization: Bearer $TOKEN" \
 
 | Service    | URL                           | Credentials        |
 |------------|-------------------------------|--------------------|
+| Web UI     | http://localhost:3001         | None               |
+| API        | http://localhost:8080         | JWT Bearer token   |
 | Eureka     | http://localhost:8761         | None               |
 | Prometheus | http://localhost:9090         | None               |
 | Grafana    | http://localhost:3000         | admin / admin123   |
@@ -353,19 +371,26 @@ All services accept these environment variables (with defaults for local dev):
 
 ```
 student-management-system/
-├── pom.xml                     # Parent POM
 ├── docker-compose.yml          # Full stack orchestration
 ├── Makefile                    # Developer convenience commands
 ├── .env.example                # Environment variable template
-├── service-registry/           # Eureka Server
-├── api-gateway/                # Spring Cloud Gateway + JWT filter
-├── auth-service/               # Authentication & user management
-├── student-service/            # Student domain
-├── teacher-service/            # Teacher domain
-├── module-service/             # Module (course) domain
-├── grade-service/              # Grade domain
-├── enrollment-service/         # Enrollment domain
-├── notification-service/       # Notification domain
+├── services/                   # All Spring Boot microservices
+│   ├── pom.xml                 # Parent POM
+│   ├── service-registry/       # Eureka Server
+│   ├── api-gateway/            # Spring Cloud Gateway + JWT filter
+│   ├── auth-service/           # Authentication & user management
+│   ├── student-service/        # Student domain
+│   ├── teacher-service/        # Teacher domain
+│   ├── module-service/         # Module (course) domain
+│   ├── grade-service/          # Grade domain
+│   ├── enrollment-service/     # Enrollment domain
+│   └── notification-service/   # Notification domain
+├── web/                        # React Router v7 frontend
+│   ├── app/                    # Routes, components, styles
+│   ├── public/                 # Static assets
+│   ├── Dockerfile
+│   ├── package.json
+│   └── vite.config.ts
 └── monitoring/
     ├── prometheus/
     │   └── prometheus.yml

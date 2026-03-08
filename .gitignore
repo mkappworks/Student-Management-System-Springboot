@@ -33,3 +33,8 @@ logs/
 
 # Docker volumes
 docker-data/
+
+# Frontend (also covered by web/.gitignore)
+web/node_modules/
+web/build/
+web/.react-router/

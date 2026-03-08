@@ -4,6 +4,11 @@
 **/*.jar
 **/*.war
 
+# Frontend
+web/node_modules/
+web/build/
+web/.react-router/
+
 # IDE & editor config
 .idea/
 **/*.iml

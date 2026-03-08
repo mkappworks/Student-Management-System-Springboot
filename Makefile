@@ -1,4 +1,4 @@
-.PHONY: build test up down logs clean help
+.PHONY: build test up down logs clean help web-install web-dev web-build
 
 # Colors
 GREEN  := \033[0;32m
@@ -57,6 +57,15 @@ rebuild: ## Rebuild and restart a specific service (usage: make rebuild SVC=stud
 clean: ## Clean Maven build artifacts
 	mvn -f services/pom.xml clean
 
+web-install: ## Install frontend dependencies (bun)
+	cd web && bun install
+
+web-dev: ## Start frontend dev server (bun dev, port 5173)
+	cd web && bun dev
+
+web-build: ## Build frontend for production
+	cd web && bun run build
+
 health: ## Check health of all services
 	@echo "$(GREEN)Checking service health...$(RESET)"
 	@curl -s http://localhost:8761/actuator/health | python3 -m json.tool 2>/dev/null || echo "service-registry: DOWN"
@@ -68,3 +77,4 @@ health: ## Check health of all services
 	@curl -s http://localhost:8083/actuator/health | python3 -m json.tool 2>/dev/null || echo "grade-service: DOWN"
 	@curl -s http://localhost:8084/actuator/health | python3 -m json.tool 2>/dev/null || echo "enrollment-service: DOWN"
 	@curl -s http://localhost:8085/actuator/health | python3 -m json.tool 2>/dev/null || echo "notification-service: DOWN"
+	@curl -s http://localhost:3001 > /dev/null 2>&1 && echo "web: UP" || echo "web: DOWN"
