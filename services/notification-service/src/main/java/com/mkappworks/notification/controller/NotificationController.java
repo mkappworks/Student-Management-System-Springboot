@@ -1,5 +1,6 @@
 package com.mkappworks.notification.controller;
 
+import com.mkappworks.common.dto.ApiResponse;
 import com.mkappworks.notification.dto.NotificationRequest;
 import com.mkappworks.notification.dto.NotificationResponse;
 import com.mkappworks.notification.service.NotificationService;
@@ -20,13 +21,13 @@ public class NotificationController {
 
     @PostMapping("/send")
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
-    public ResponseEntity<NotificationResponse> send(@Valid @RequestBody NotificationRequest request) {
-        return ResponseEntity.ok(notificationService.sendNotification(request));
+    public ResponseEntity<ApiResponse<NotificationResponse>> send(@Valid @RequestBody NotificationRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(notificationService.sendNotification(request), "Notification sent"));
     }
 
     @GetMapping("/recipient/{recipientId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
-    public ResponseEntity<List<NotificationResponse>> getByRecipient(@PathVariable Long recipientId) {
-        return ResponseEntity.ok(notificationService.getRecipientNotifications(recipientId));
+    public ResponseEntity<ApiResponse<List<NotificationResponse>>> getByRecipient(@PathVariable Long recipientId) {
+        return ResponseEntity.ok(ApiResponse.success(notificationService.getRecipientNotifications(recipientId), "Notifications retrieved"));
     }
 }

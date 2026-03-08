@@ -3,7 +3,7 @@ package com.mkappworks.moduleservice.service;
 import com.mkappworks.moduleservice.dto.ModuleDtos.*;
 import com.mkappworks.moduleservice.entity.Module;
 import com.mkappworks.moduleservice.entity.ModuleStatus;
-import com.mkappworks.moduleservice.exception.ResourceNotFoundException;
+import com.mkappworks.common.exception.ResourceNotFoundException;
 import com.mkappworks.moduleservice.repository.ModuleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

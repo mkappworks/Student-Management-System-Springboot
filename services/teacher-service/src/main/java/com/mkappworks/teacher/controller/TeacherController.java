@@ -1,5 +1,6 @@
 package com.mkappworks.teacher.controller;
 
+import com.mkappworks.common.dto.ApiResponse;
 import com.mkappworks.teacher.dto.TeacherRequest;
 import com.mkappworks.teacher.dto.TeacherResponse;
 import com.mkappworks.teacher.service.TeacherService;
@@ -21,38 +22,39 @@ public class TeacherController {
 
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<TeacherResponse> create(@Valid @RequestBody TeacherRequest req) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(teacherService.createTeacher(req));
+    public ResponseEntity<ApiResponse<TeacherResponse>> create(@Valid @RequestBody TeacherRequest req) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(teacherService.createTeacher(req), "Teacher created successfully"));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
-    public ResponseEntity<TeacherResponse> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(teacherService.getTeacherById(id));
+    public ResponseEntity<ApiResponse<TeacherResponse>> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(teacherService.getTeacherById(id), "Teacher retrieved"));
     }
 
     @GetMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
-    public ResponseEntity<Page<TeacherResponse>> getAll(Pageable pageable) {
-        return ResponseEntity.ok(teacherService.getAllTeachers(pageable));
+    public ResponseEntity<ApiResponse<Page<TeacherResponse>>> getAll(Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(teacherService.getAllTeachers(pageable), "Teachers retrieved"));
     }
 
     @GetMapping("/search")
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER')")
-    public ResponseEntity<Page<TeacherResponse>> search(@RequestParam String query, Pageable pageable) {
-        return ResponseEntity.ok(teacherService.searchTeachers(query, pageable));
+    public ResponseEntity<ApiResponse<Page<TeacherResponse>>> search(@RequestParam String query, Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(teacherService.searchTeachers(query, pageable), "Search results"));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
-    public ResponseEntity<TeacherResponse> update(@PathVariable Long id, @Valid @RequestBody TeacherRequest req) {
-        return ResponseEntity.ok(teacherService.updateTeacher(id, req));
+    public ResponseEntity<ApiResponse<TeacherResponse>> update(@PathVariable Long id, @Valid @RequestBody TeacherRequest req) {
+        return ResponseEntity.ok(ApiResponse.success(teacherService.updateTeacher(id, req), "Teacher updated successfully"));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
         teacherService.deleteTeacher(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success(null, "Teacher deleted successfully"));
     }
 }

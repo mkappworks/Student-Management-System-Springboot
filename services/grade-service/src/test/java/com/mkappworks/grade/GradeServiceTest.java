@@ -2,7 +2,7 @@ package com.mkappworks.grade;
 
 import com.mkappworks.grade.dto.GradeRequest;
 import com.mkappworks.grade.dto.GradeResponse;
-import com.mkappworks.grade.exception.ResourceNotFoundException;
+import com.mkappworks.common.exception.ResourceNotFoundException;
 import com.mkappworks.grade.model.Grade;
 import com.mkappworks.grade.repository.GradeRepository;
 import com.mkappworks.grade.service.GradeService;

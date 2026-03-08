@@ -1,5 +1,6 @@
 package com.mkappworks.grade.controller;
 
+import com.mkappworks.common.dto.ApiResponse;
 import com.mkappworks.grade.dto.GradeRequest;
 import com.mkappworks.grade.dto.GradeResponse;
 import com.mkappworks.grade.service.GradeService;
@@ -21,30 +22,31 @@ public class GradeController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
-    public ResponseEntity<GradeResponse> assignGrade(@Valid @RequestBody GradeRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(gradeService.assignGrade(request));
+    public ResponseEntity<ApiResponse<GradeResponse>> assignGrade(@Valid @RequestBody GradeRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(gradeService.assignGrade(request), "Grade assigned successfully"));
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<GradeResponse> getGrade(@PathVariable Long id) {
-        return ResponseEntity.ok(gradeService.getGradeById(id));
+    public ResponseEntity<ApiResponse<GradeResponse>> getGrade(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(gradeService.getGradeById(id), "Grade retrieved"));
     }
 
     @GetMapping("/student/{studentId}")
-    public ResponseEntity<List<GradeResponse>> getStudentGrades(@PathVariable Long studentId) {
-        return ResponseEntity.ok(gradeService.getStudentGrades(studentId));
+    public ResponseEntity<ApiResponse<List<GradeResponse>>> getStudentGrades(@PathVariable Long studentId) {
+        return ResponseEntity.ok(ApiResponse.success(gradeService.getStudentGrades(studentId), "Grades retrieved"));
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('TEACHER', 'ADMIN')")
-    public ResponseEntity<GradeResponse> updateGrade(@PathVariable Long id, @Valid @RequestBody GradeRequest request) {
-        return ResponseEntity.ok(gradeService.updateGrade(id, request));
+    public ResponseEntity<ApiResponse<GradeResponse>> updateGrade(@PathVariable Long id, @Valid @RequestBody GradeRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(gradeService.updateGrade(id, request), "Grade updated successfully"));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<Void> deleteGrade(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<Void>> deleteGrade(@PathVariable Long id) {
         gradeService.deleteGrade(id);
-        return ResponseEntity.noContent().build();
+        return ResponseEntity.ok(ApiResponse.success(null, "Grade deleted successfully"));
     }
 }

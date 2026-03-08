@@ -1,6 +1,6 @@
 package com.mkappworks.teacher.config;
 
-import com.mkappworks.teacher.security.JwtAuthFilter;
+import com.mkappworks.common.security.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

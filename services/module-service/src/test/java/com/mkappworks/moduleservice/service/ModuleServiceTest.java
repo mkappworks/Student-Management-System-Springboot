@@ -3,7 +3,7 @@ package com.mkappworks.moduleservice.service;
 import com.mkappworks.moduleservice.dto.ModuleDtos.*;
 import com.mkappworks.moduleservice.entity.Module;
 import com.mkappworks.moduleservice.entity.ModuleStatus;
-import com.mkappworks.moduleservice.exception.ResourceNotFoundException;
+import com.mkappworks.common.exception.ResourceNotFoundException;
 import com.mkappworks.moduleservice.repository.ModuleRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;

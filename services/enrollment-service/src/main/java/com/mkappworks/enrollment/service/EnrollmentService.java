@@ -2,8 +2,8 @@ package com.mkappworks.enrollment.service;
 
 import com.mkappworks.enrollment.dto.EnrollmentRequest;
 import com.mkappworks.enrollment.dto.EnrollmentResponse;
-import com.mkappworks.enrollment.exception.DuplicateResourceException;
-import com.mkappworks.enrollment.exception.ResourceNotFoundException;
+import com.mkappworks.common.exception.DuplicateResourceException;
+import com.mkappworks.common.exception.ResourceNotFoundException;
 import com.mkappworks.enrollment.model.Enrollment;
 import com.mkappworks.enrollment.repository.EnrollmentRepository;
 import lombok.RequiredArgsConstructor;

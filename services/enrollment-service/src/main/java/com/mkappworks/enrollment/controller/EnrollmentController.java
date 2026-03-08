@@ -1,5 +1,6 @@
 package com.mkappworks.enrollment.controller;
 
+import com.mkappworks.common.dto.ApiResponse;
 import com.mkappworks.enrollment.dto.EnrollmentRequest;
 import com.mkappworks.enrollment.dto.EnrollmentResponse;
 import com.mkappworks.enrollment.service.EnrollmentService;
@@ -21,25 +22,26 @@ public class EnrollmentController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
-    public ResponseEntity<EnrollmentResponse> enroll(@Valid @RequestBody EnrollmentRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(enrollmentService.enroll(request));
+    public ResponseEntity<ApiResponse<EnrollmentResponse>> enroll(@Valid @RequestBody EnrollmentRequest request) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(enrollmentService.enroll(request), "Enrolled successfully"));
     }
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
-    public ResponseEntity<EnrollmentResponse> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(enrollmentService.getEnrollmentById(id));
+    public ResponseEntity<ApiResponse<EnrollmentResponse>> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(enrollmentService.getEnrollmentById(id), "Enrollment retrieved"));
     }
 
     @GetMapping("/student/{studentId}")
     @PreAuthorize("hasAnyRole('ADMIN', 'TEACHER', 'STUDENT')")
-    public ResponseEntity<List<EnrollmentResponse>> getStudentEnrollments(@PathVariable Long studentId) {
-        return ResponseEntity.ok(enrollmentService.getStudentEnrollments(studentId));
+    public ResponseEntity<ApiResponse<List<EnrollmentResponse>>> getStudentEnrollments(@PathVariable Long studentId) {
+        return ResponseEntity.ok(ApiResponse.success(enrollmentService.getStudentEnrollments(studentId), "Enrollments retrieved"));
     }
 
     @PatchMapping("/{id}/drop")
     @PreAuthorize("hasAnyRole('ADMIN', 'STUDENT')")
-    public ResponseEntity<EnrollmentResponse> drop(@PathVariable Long id, @RequestParam(required = false) String reason) {
-        return ResponseEntity.ok(enrollmentService.dropEnrollment(id, reason));
+    public ResponseEntity<ApiResponse<EnrollmentResponse>> drop(@PathVariable Long id, @RequestParam(required = false) String reason) {
+        return ResponseEntity.ok(ApiResponse.success(enrollmentService.dropEnrollment(id, reason), "Enrollment dropped"));
     }
 }

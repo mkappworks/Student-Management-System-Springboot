@@ -1,6 +1,6 @@
 package com.mkappworks.notification.config;
 
-import com.mkappworks.notification.security.JwtAuthFilter;
+import com.mkappworks.common.security.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
