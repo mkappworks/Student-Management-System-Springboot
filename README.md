@@ -24,27 +24,29 @@ A production-ready **Spring Boot 3.5 / Java 21** microservices application for m
   │  Notification :8085                             │
   └─────────────────────────────────────────────────┘
              │
-  ┌──────────▼──────────────────┐
-  │         Monitoring           │
-  │  Prometheus :9090            │
-  │  Grafana    :3000            │
-  └──────────────────────────────┘
+  ┌──────────▼──────────────────────────────────────┐
+  │                  Monitoring                      │
+  │  Prometheus :9090  (metrics)                     │
+  │  Loki       :3100  (logs)                        │
+  │  Tempo      :3200  (traces, Zipkin :9411)        │
+  │  Grafana    :3000  (dashboards — all three)      │
+  └──────────────────────────────────────────────────┘
 ```
 
 ### Services
 
-| Service              | Port | Description                                  |
-|----------------------|------|----------------------------------------------|
-| web                  | 3001 | React Router v7 frontend (Docker) / 5173 dev |
-| service-registry     | 8761 | Eureka service discovery                     |
-| api-gateway          | 8080 | JWT-validating API gateway (Spring Cloud GW) |
-| auth-service         | 8090 | User registration, login, JWT issuance       |
-| student-service      | 8081 | Student CRUD, search, status management      |
-| teacher-service      | 8082 | Teacher CRUD, department management          |
-| module-service       | 8086 | Module (course) management with capacity     |
-| grade-service        | 8083 | Grade recording with letter-grade calculation|
-| enrollment-service   | 8084 | Student-module enrollment management         |
-| notification-service | 8085 | In-app / email notifications                 |
+| Service              | Port | Description                                   |
+|----------------------|------|-----------------------------------------------|
+| web                  | 3001 | React Router v7 frontend (Docker) / 5173 dev  |
+| service-registry     | 8761 | Eureka service discovery                      |
+| api-gateway          | 8080 | JWT-validating API gateway (Spring Cloud GW)  |
+| auth-service         | 8090 | User registration, login, JWT issuance        |
+| student-service      | 8081 | Student CRUD, search, status management       |
+| teacher-service      | 8082 | Teacher CRUD, department management           |
+| module-service       | 8086 | Module (course) management with capacity      |
+| grade-service        | 8083 | Grade recording with letter-grade calculation |
+| enrollment-service   | 8084 | Student-module enrollment management          |
+| notification-service | 8085 | In-app / email notifications                  |
 
 ---
 
@@ -75,12 +77,12 @@ API Gateway SecurityConfig  ←  "Is this request authenticated? Block or forwar
 Auth Service SecurityConfig  ←  "Load the user, check the password, issue a JWT."
 ```
 
-| | API Gateway | Auth Service |
-|---|---|---|
-| Framework | WebFlux (reactive) | Servlet (blocking) |
-| Purpose | Traffic gating | Credential validation & JWT issuance |
-| Knows about users? | No | Yes (via `UserRepository`) |
-| JWT role | Validates tokens | Creates tokens |
+|                    | API Gateway        | Auth Service                         |
+|--------------------|--------------------|------------------------------------- |
+| Framework          | WebFlux (reactive) | Servlet (blocking)                   |
+| Purpose            | Traffic gating     | Credential validation & JWT issuance |
+| Knows about users? | No                 | Yes (via `UserRepository`)           |
+| JWT role           | Validates tokens   | Creates tokens                       |
 
 ---
 
@@ -94,7 +96,10 @@ Auth Service SecurityConfig  ←  "Load the user, check the password, issue a JW
 - **Flyway** — database migrations
 - **JWT (JJWT 0.12.3)** — stateless authentication
 - **Docker Compose** — multi-container orchestration
-- **Prometheus + Grafana** — metrics and dashboards
+- **Prometheus** — metrics scraping and storage (TSDB, 7-day retention)
+- **Loki** — log aggregation (shipped via `loki-logback-appender`)
+- **Tempo** — distributed tracing (receives spans via Zipkin protocol)
+- **Grafana** — unified dashboards for metrics, logs, and traces
 - **Testcontainers** — integration tests with real PostgreSQL
 - **Lombok** — boilerplate reduction
 
@@ -295,30 +300,64 @@ curl -H "Authorization: Bearer $TOKEN" \
 
 ## Roles & Permissions
 
-| Role    | Permissions                                                |
-|---------|------------------------------------------------------------|
-| ADMIN   | Full access to all endpoints                               |
-| TEACHER | Read/write grades, read students and modules               |
-| STUDENT | Read own data, view modules and own enrollments            |
+| Role    | Permissions                                     |
+|---------|-------------------------------------------------|
+| ADMIN   | Full access to all endpoints                    |
+| TEACHER | Read/write grades, read students and modules    |
+| STUDENT | Read own data, view modules and own enrollments |
 
 ---
 
 ## Monitoring
 
-| Service    | URL                           | Credentials        |
-|------------|-------------------------------|--------------------|
-| Web UI     | http://localhost:3001         | None               |
-| API        | http://localhost:8080         | JWT Bearer token   |
-| Eureka     | http://localhost:8761         | None               |
-| Prometheus | http://localhost:9090         | None               |
-| Grafana    | http://localhost:3000         | admin / admin123   |
+The full observability stack (Prometheus + Loki + Tempo + Grafana) starts automatically with `docker compose up`.
 
-Grafana pre-provisions a **SMS - Microservices Overview** dashboard with:
+### URLs
+
+| Service    | URL                     | Credentials      |
+|------------|-------------------------|------------------|
+| Web UI     | http://localhost:3001   | None             |
+| API        | http://localhost:8080   | JWT Bearer token |
+| Eureka     | http://localhost:8761   | None             |
+| Prometheus | http://localhost:9090   | None             |
+| Loki       | http://localhost:3100   | None             |
+| Tempo      | http://localhost:3200   | None             |
+| Grafana    | http://localhost:3000   | admin / admin123 |
+
+### Observability Stack
+
+| Pillar  | Tool       | What it collects                                          | Stored in                | Retention |
+|---------|------------|-----------------------------------------------------------|--------------------------|-----------|
+| Metrics | Prometheus | Numeric measurements (request rate, heap, DB connections) | `prometheus_data` volume | 7 days    |
+| Logs    | Loki       | Structured log lines from all services                    | `loki_data` volume       | Unlimited |
+| Traces  | Tempo      | Per-request span trees across services                    | `tempo_data` volume      | 24 hours  |
+
+**How each pillar works:**
+- **Metrics** — Prometheus scrapes `/actuator/prometheus` on every service every 15 seconds. All services expose this via `micrometer-registry-prometheus`.
+- **Logs** — Each service ships log lines directly to Loki at `http://loki:3100` using `loki-logback-appender`. No log files are written to disk in Docker.
+- **Traces** — Each service sends spans to Tempo at `http://tempo:9411` (Zipkin protocol) via `micrometer-tracing-bridge-brave` + `zipkin-reporter-brave`. 100% of requests are traced (`sampling.probability: 1.0`).
+
+### Grafana Dashboards & Datasources
+
+Grafana is fully pre-provisioned — no manual setup required.
+
+**Datasources (auto-provisioned):**
+- `Prometheus` — default datasource for metrics queries
+- `Loki` — log queries; includes a derived field to extract `traceId` from log lines and link directly to Tempo
+- `Tempo` — trace queries; linked back to Loki for correlated log search and to Prometheus for the service map
+
+**Pre-built dashboard — SMS Microservices Overview:**
 - HTTP request rate per service
-- Error rate (4xx / 5xx)
-- JVM heap memory usage
+- Error rate (4xx / 5xx) per service
+- JVM heap memory usage (MB)
 - HikariCP active database connections
-- P99 response time
+- P99 response time (ms)
+
+**Cross-pillar navigation in Grafana:**
+1. Spot an error spike in the metrics dashboard
+2. Open Explore → Loki, filter by service label and time window
+3. Click a `traceId` in a log line → jumps to the full Tempo trace
+4. See the exact span (and service) where the request failed or slowed down
 
 ---
 
@@ -341,29 +380,31 @@ mvn test && open target/site/jacoco/index.html
 
 All services accept these environment variables (with defaults for local dev):
 
-| Variable    | Default                            | Description              |
-|-------------|-------------------------------------|--------------------------|
-| DB_HOST     | localhost                           | PostgreSQL hostname      |
-| DB_PORT     | 5432                                | PostgreSQL port          |
-| DB_NAME     | \<service\>_db                      | Database name            |
-| DB_USERNAME | postgres                            | Database user            |
-| DB_PASSWORD | postgres                            | Database password        |
-| EUREKA_HOST | localhost                           | Eureka server hostname   |
-| EUREKA_PORT | 8761                                | Eureka server port       |
-| JWT_SECRET  | 404E635266...                       | HS256 secret key (hex)   |
+| Variable    | Default         | Description                      |
+|-------------|-----------------|----------------------------------|
+| DB_HOST     | localhost       | PostgreSQL hostname              |
+| DB_PORT     | 5432            | PostgreSQL port                  |
+| DB_NAME     | \<service\>_db  | Database name                    |
+| DB_USERNAME | postgres        | Database user                    |
+| DB_PASSWORD | postgres        | Database password                |
+| EUREKA_HOST | localhost       | Eureka server hostname           |
+| EUREKA_PORT | 8761            | Eureka server port               |
+| JWT_SECRET  | 404E635266...   | HS256 secret key (hex)           |
+| LOKI_HOST   | loki            | Loki hostname (log shipping)     |
+| TEMPO_HOST  | tempo           | Tempo hostname (trace shipping)  |
 
 ---
 
 ## Letter Grade Scale
 
-| Score    | Grade |
-|----------|-------|
-| ≥ 90%    | A+    |
-| ≥ 80%    | A     |
-| ≥ 70%    | B     |
-| ≥ 60%    | C     |
-| ≥ 50%    | D     |
-| < 50%    | F     |
+| Score  | Grade |
+|--------|-------|
+| ≥ 90%  | A+    |
+| ≥ 80%  | A     |
+| ≥ 70%  | B     |
+| ≥ 60%  | C     |
+| ≥ 50%  | D     |
+| < 50%  | F     |
 
 ---
 
@@ -393,9 +434,18 @@ student-management-system/
 │   └── vite.config.ts
 └── monitoring/
     ├── prometheus/
-    │   └── prometheus.yml
+    │   └── prometheus.yml          # Scrape targets for all 9 services
+    ├── loki/
+    │   └── loki-config.yml         # Single-node filesystem storage
+    ├── tempo/
+    │   └── tempo-config.yml        # Zipkin receiver, local block storage
     └── grafana/
         └── provisioning/
+            ├── datasources/
+            │   └── datasource.yml      # Prometheus + Loki + Tempo auto-wired
+            └── dashboards/
+                ├── dashboard.yml       # Dashboard provider config
+                └── sms-overview.json   # Pre-built microservices dashboard
 ```
 
 ---
@@ -407,9 +457,9 @@ student-management-system/
 - [ ] Change Grafana admin password
 - [ ] Enable HTTPS (TLS termination at load balancer or gateway)
 - [ ] Set `spring.jpa.show-sql=false` (already default)
-- [ ] Configure log aggregation (ELK / Loki)
+- [x] Configure log aggregation (Loki + loki-logback-appender, all services)
+- [x] Set up distributed tracing (Tempo via Zipkin protocol, all services)
 - [ ] Add circuit breakers (Resilience4j)
-- [ ] Set up distributed tracing (Zipkin / Jaeger)
 - [ ] Configure rate limiting in API Gateway
 - [ ] Set up database connection pool tuning per load profile
 
