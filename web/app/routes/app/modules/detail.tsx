@@ -1,8 +1,8 @@
 import { redirect } from "react-router"
 import { Link, Form } from "react-router"
 import type { Route } from "./+types/detail"
-import { requireAuth } from "~/lib/auth.server"
-import { api } from "~/lib/api.server"
+import { requireAuth } from "~/lib/auth"
+import { api } from "~/lib/api"
 import { PageHeader } from "~/components/layout/page-header"
 import { StatusBadge } from "~/components/status-badge"
 import { Button } from "~/components/ui/button"
@@ -10,14 +10,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
 import { Pencil } from "lucide-react"
 import type { ModuleResponse } from "~/types/api"
 
-export async function loader({ request, params }: Route.LoaderArgs) {
-  const session = requireAuth(request)
+export async function clientLoader({ params }: Route.LoaderArgs) {
+  const session = requireAuth()
   const module = await api.get<ModuleResponse>(`/api/v1/modules/${params.id}`, session.token)
   return { module, role: session.role, userId: session.userId }
 }
 
-export async function action({ request, params }: Route.ActionArgs) {
-  const session = requireAuth(request)
+export async function clientAction({ request, params }: Route.ActionArgs) {
+  const session = requireAuth()
   const form = await request.formData()
   const actionName = form.get("_action")
 

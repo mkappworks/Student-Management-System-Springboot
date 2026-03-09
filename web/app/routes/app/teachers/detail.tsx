@@ -1,7 +1,7 @@
 import { Link } from "react-router"
 import type { Route } from "./+types/detail"
-import { requireAuth } from "~/lib/auth.server"
-import { api } from "~/lib/api.server"
+import { requireAuth } from "~/lib/auth"
+import { api } from "~/lib/api"
 import { PageHeader } from "~/components/layout/page-header"
 import { StatusBadge } from "~/components/status-badge"
 import { Button } from "~/components/ui/button"
@@ -10,8 +10,8 @@ import { Badge } from "~/components/ui/badge"
 import { Pencil } from "lucide-react"
 import type { TeacherResponse } from "~/types/api"
 
-export async function loader({ request, params }: Route.LoaderArgs) {
-  const session = requireAuth(request)
+export async function clientLoader({ params }: Route.LoaderArgs) {
+  const session = requireAuth()
   const teacher = await api.get<TeacherResponse>(`/api/v1/teachers/${params.id}`, session.token)
   return { teacher, role: session.role }
 }

@@ -1,13 +1,13 @@
 import type { Route } from "./+types/dashboard"
-import { requireAuth } from "~/lib/auth.server"
-import { api } from "~/lib/api.server"
+import { requireAuth } from "~/lib/auth"
+import { api } from "~/lib/api"
 import { StatCard } from "~/components/stat-card"
 import { PageHeader } from "~/components/layout/page-header"
 import { Users, GraduationCap, BookOpen, ClipboardList } from "lucide-react"
 import type { Page, StudentResponse, TeacherResponse, ModuleResponse } from "~/types/api"
 
-export async function loader({ request }: Route.LoaderArgs) {
-  const session = requireAuth(request)
+export async function clientLoader() {
+  const session = requireAuth()
   const token = session.token
 
   const [students, teachers, modules] = await Promise.allSettled([

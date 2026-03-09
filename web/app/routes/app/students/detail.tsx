@@ -1,7 +1,7 @@
 import { Link } from "react-router"
 import type { Route } from "./+types/detail"
-import { requireAuth } from "~/lib/auth.server"
-import { api } from "~/lib/api.server"
+import { requireAuth } from "~/lib/auth"
+import { api } from "~/lib/api"
 import { PageHeader } from "~/components/layout/page-header"
 import { StatusBadge } from "~/components/status-badge"
 import { DataTable } from "~/components/data-table/data-table"
@@ -10,8 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card"
 import { Pencil } from "lucide-react"
 import type { StudentResponse, EnrollmentResponse, GradeResponse } from "~/types/api"
 
-export async function loader({ request, params }: Route.LoaderArgs) {
-  const session = requireAuth(request)
+export async function clientLoader({ params }: Route.LoaderArgs) {
+  const session = requireAuth()
   const [student, enrollments, grades] = await Promise.allSettled([
     api.get<StudentResponse>(`/api/v1/students/${params.id}`, session.token),
     api.get<EnrollmentResponse[]>(`/api/v1/enrollments/student/${params.id}`, session.token),

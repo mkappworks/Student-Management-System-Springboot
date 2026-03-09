@@ -1,8 +1,8 @@
 import { data, redirect } from "react-router"
 import { Form, Link, useActionData, useNavigation } from "react-router"
 import type { Route } from "./+types/new"
-import { requireAuth } from "~/lib/auth.server"
-import { api, ApiError } from "~/lib/api.server"
+import { requireAuth } from "~/lib/auth"
+import { api, ApiError } from "~/lib/api"
 import { PageHeader } from "~/components/layout/page-header"
 import { FormField } from "~/components/forms/form-field"
 import { Button } from "~/components/ui/button"
@@ -17,14 +17,14 @@ import {
 } from "~/components/ui/select"
 import type { EnrollmentResponse, ModuleResponse, Page } from "~/types/api"
 
-export async function loader({ request }: Route.LoaderArgs) {
-  const session = requireAuth(request)
+export async function clientLoader() {
+  const session = requireAuth()
   const modules = await api.get<Page<ModuleResponse>>("/api/v1/modules?size=100", session.token)
   return { modules: modules.content, userId: session.userId, role: session.role }
 }
 
-export async function action({ request }: Route.ActionArgs) {
-  const session = requireAuth(request)
+export async function clientAction({ request }: Route.ActionArgs) {
+  const session = requireAuth()
   const form = await request.formData()
 
   const studentId =
@@ -47,7 +47,7 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function NewEnrollmentPage({ loaderData }: Route.ComponentProps) {
   const { modules, userId, role } = loaderData
-  const actionData = useActionData<typeof action>()
+  const actionData = useActionData<typeof clientAction>()
   const navigation = useNavigation()
   const isSubmitting = navigation.state === "submitting"
 

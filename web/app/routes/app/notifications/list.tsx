@@ -1,7 +1,7 @@
 import { Link } from "react-router"
 import type { Route } from "./+types/list"
-import { requireAuth } from "~/lib/auth.server"
-import { api, ApiError } from "~/lib/api.server"
+import { requireAuth } from "~/lib/auth"
+import { api, ApiError } from "~/lib/api"
 import { DataTable } from "~/components/data-table/data-table"
 import { PageHeader } from "~/components/layout/page-header"
 import { StatusBadge } from "~/components/status-badge"
@@ -9,8 +9,8 @@ import { Button } from "~/components/ui/button"
 import { Send } from "lucide-react"
 import type { NotificationResponse } from "~/types/api"
 
-export async function loader({ request }: Route.LoaderArgs) {
-  const session = requireAuth(request)
+export async function clientLoader() {
+  const session = requireAuth()
 
   if (!session.userId) {
     return { notifications: [], role: session.role }

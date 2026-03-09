@@ -1,8 +1,8 @@
 import { redirect } from "react-router"
 import { Link } from "react-router"
 import type { Route } from "./+types/list"
-import { requireAuth } from "~/lib/auth.server"
-import { api, ApiError } from "~/lib/api.server"
+import { requireAuth } from "~/lib/auth"
+import { api, ApiError } from "~/lib/api"
 import { DataTable } from "~/components/data-table/data-table"
 import { PageHeader } from "~/components/layout/page-header"
 import { StatusBadge } from "~/components/status-badge"
@@ -11,8 +11,8 @@ import { ConfirmDialog } from "~/components/confirm-dialog"
 import { Plus, Trash2 } from "lucide-react"
 import type { EnrollmentResponse } from "~/types/api"
 
-export async function loader({ request }: Route.LoaderArgs) {
-  const session = requireAuth(request)
+export async function clientLoader({ request }: Route.LoaderArgs) {
+  const session = requireAuth()
   const url = new URL(request.url)
   const studentId = session.role === "STUDENT" ? session.userId : url.searchParams.get("studentId")
 
@@ -33,8 +33,8 @@ export async function loader({ request }: Route.LoaderArgs) {
   }
 }
 
-export async function action({ request }: Route.ActionArgs) {
-  const session = requireAuth(request)
+export async function clientAction({ request }: Route.ActionArgs) {
+  const session = requireAuth()
   const form = await request.formData()
   const actionName = form.get("_action")
   const id = form.get("id")

@@ -1,14 +1,12 @@
 import { redirect } from "react-router"
 import type { Route } from "./+types/logout"
-import { clearAuthCookies } from "~/lib/auth.server"
+import { clearAuth } from "~/lib/auth"
 
-export async function action(_: Route.ActionArgs) {
-  const cookies = clearAuthCookies()
-  return redirect("/login", {
-    headers: cookies.map((c) => ["Set-Cookie", c]) as [string, string][],
-  })
+export async function clientAction(_: Route.ActionArgs) {
+  clearAuth()
+  return redirect("/login")
 }
 
-export async function loader() {
+export async function clientLoader() {
   return redirect("/login")
 }

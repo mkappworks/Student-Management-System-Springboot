@@ -1,8 +1,8 @@
 import { data, redirect } from "react-router"
 import { Form, Link, useActionData, useNavigation } from "react-router"
 import type { Route } from "./+types/new"
-import { requireRole } from "~/lib/auth.server"
-import { api, ApiError } from "~/lib/api.server"
+import { requireRole } from "~/lib/auth"
+import { api, ApiError } from "~/lib/api"
 import { PageHeader } from "~/components/layout/page-header"
 import { FormField } from "~/components/forms/form-field"
 import { Button } from "~/components/ui/button"
@@ -17,13 +17,13 @@ import {
 } from "~/components/ui/select"
 import type { ModuleResponse } from "~/types/api"
 
-export async function loader({ request }: Route.LoaderArgs) {
-  requireRole(request, ["ADMIN"])
+export async function clientLoader() {
+  requireRole(["ADMIN"])
   return null
 }
 
-export async function action({ request }: Route.ActionArgs) {
-  const session = requireRole(request, ["ADMIN"])
+export async function clientAction({ request }: Route.ActionArgs) {
+  const session = requireRole(["ADMIN"])
   const form = await request.formData()
 
   const payload = {
@@ -47,7 +47,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function NewModulePage() {
-  const actionData = useActionData<typeof action>()
+  const actionData = useActionData<typeof clientAction>()
   const navigation = useNavigation()
   const isSubmitting = navigation.state === "submitting"
 

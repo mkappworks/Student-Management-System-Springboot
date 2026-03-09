@@ -1,12 +1,12 @@
 import { Outlet } from "react-router"
 import type { Route } from "./+types/layout"
-import { requireAuth } from "~/lib/auth.server"
+import { requireAuth } from "~/lib/auth"
 import { SidebarProvider } from "~/components/ui/sidebar"
 import { AppSidebar } from "~/components/layout/app-sidebar"
 import { AppHeader } from "~/components/layout/app-header"
 
-export async function loader({ request }: Route.LoaderArgs) {
-  const session = requireAuth(request)
+export async function clientLoader() {
+  const session = requireAuth()
   return { session }
 }
 

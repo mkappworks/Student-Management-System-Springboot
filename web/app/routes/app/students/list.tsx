@@ -1,8 +1,8 @@
 import { redirect } from "react-router"
 import { Link } from "react-router"
 import type { Route } from "./+types/list"
-import { requireRole } from "~/lib/auth.server"
-import { api, ApiError } from "~/lib/api.server"
+import { requireRole } from "~/lib/auth"
+import { api, ApiError } from "~/lib/api"
 import { DataTable } from "~/components/data-table/data-table"
 import { DataTablePagination } from "~/components/data-table/data-table-pagination"
 import { DataTableToolbar } from "~/components/data-table/data-table-toolbar"
@@ -13,8 +13,8 @@ import { ConfirmDialog } from "~/components/confirm-dialog"
 import { Plus, Eye, Pencil, Trash2 } from "lucide-react"
 import type { StudentResponse, Page } from "~/types/api"
 
-export async function loader({ request }: Route.LoaderArgs) {
-  const session = requireRole(request, ["ADMIN", "TEACHER"])
+export async function clientLoader({ request }: Route.LoaderArgs) {
+  const session = requireRole(["ADMIN", "TEACHER"])
   const url = new URL(request.url)
   const page = Number(url.searchParams.get("page") ?? "0")
   const q = url.searchParams.get("q") ?? ""
@@ -32,8 +32,8 @@ export async function loader({ request }: Route.LoaderArgs) {
   }
 }
 
-export async function action({ request }: Route.ActionArgs) {
-  const session = requireRole(request, ["ADMIN"])
+export async function clientAction({ request }: Route.ActionArgs) {
+  const session = requireRole(["ADMIN"])
   const form = await request.formData()
   const action = form.get("_action")
   const id = form.get("id")

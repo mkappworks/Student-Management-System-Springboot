@@ -1,8 +1,8 @@
 import { data, redirect } from "react-router"
 import { Form, Link, useActionData, useNavigation } from "react-router"
 import type { Route } from "./+types/register"
-import { createAuthCookiesWithUid } from "~/lib/auth.server"
-import { api, ApiError } from "~/lib/api.server"
+import { saveAuth } from "~/lib/auth"
+import { api, ApiError } from "~/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card"
 import { Button } from "~/components/ui/button"
 import { FormField } from "~/components/forms/form-field"
@@ -16,7 +16,7 @@ import {
 } from "~/components/ui/select"
 import type { AuthResponse } from "~/types/api"
 
-export async function action({ request }: Route.ActionArgs) {
+export async function clientAction({ request }: Route.ActionArgs) {
   const form = await request.formData()
   const username = form.get("username") as string
   const email = form.get("email") as string
@@ -31,10 +31,8 @@ export async function action({ request }: Route.ActionArgs) {
       role,
     })
 
-    const cookies = createAuthCookiesWithUid(authResponse)
-    return redirect("/", {
-      headers: cookies.map((c) => ["Set-Cookie", c]) as [string, string][],
-    })
+    saveAuth(authResponse)
+    return redirect("/")
   } catch (err) {
     if (err instanceof ApiError) {
       return data({ error: err.message }, { status: err.status })
@@ -44,7 +42,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function RegisterPage() {
-  const actionData = useActionData<typeof action>()
+  const actionData = useActionData<typeof clientAction>()
   const navigation = useNavigation()
   const isSubmitting = navigation.state === "submitting"
 

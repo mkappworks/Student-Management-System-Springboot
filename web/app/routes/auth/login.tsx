@@ -1,20 +1,20 @@
 import { data, redirect } from "react-router"
 import { Form, Link, useActionData, useNavigation } from "react-router"
 import type { Route } from "./+types/login"
-import { getSessionFromRequest, createAuthCookiesWithUid } from "~/lib/auth.server"
-import { api, ApiError } from "~/lib/api.server"
+import { getSession, saveAuth } from "~/lib/auth"
+import { api, ApiError } from "~/lib/api"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "~/components/ui/card"
 import { Button } from "~/components/ui/button"
 import { FormField } from "~/components/forms/form-field"
 import type { AuthResponse, Page, StudentResponse } from "~/types/api"
 
-export async function loader({ request }: Route.LoaderArgs) {
-  const session = getSessionFromRequest(request)
+export async function clientLoader() {
+  const session = getSession()
   if (session) throw redirect("/")
   return null
 }
 
-export async function action({ request }: Route.ActionArgs) {
+export async function clientAction({ request }: Route.ActionArgs) {
   const form = await request.formData()
   const username = form.get("username") as string
   const password = form.get("password") as string
@@ -39,10 +39,8 @@ export async function action({ request }: Route.ActionArgs) {
       }
     }
 
-    const cookies = createAuthCookiesWithUid(authResponse, uid)
-    return redirect("/", {
-      headers: cookies.map((c) => ["Set-Cookie", c]) as [string, string][],
-    })
+    saveAuth(authResponse, uid)
+    return redirect("/")
   } catch (err) {
     if (err instanceof ApiError) {
       return data({ error: err.message }, { status: err.status })
@@ -52,7 +50,7 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function LoginPage() {
-  const actionData = useActionData<typeof action>()
+  const actionData = useActionData<typeof clientAction>()
   const navigation = useNavigation()
   const isSubmitting = navigation.state === "submitting"
 
