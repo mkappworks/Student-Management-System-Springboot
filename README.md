@@ -8,7 +8,7 @@ A production-ready **Spring Boot 3.5 / Java 21** microservices application for m
 
 ```
   ┌──────────────────────┐
-  │  Web Frontend :3001  │  (React Router v7 / Vite / Tailwind)
+  │  Web Frontend :3001  │  (React Router v7 SPA / Vite / Tailwind / nginx)
   └──────────┬───────────┘
              │ HTTP
   ┌──────────▼───────────┐       ┌────────────────┐
@@ -32,6 +32,8 @@ A production-ready **Spring Boot 3.5 / Java 21** microservices application for m
   │  Grafana    :3000  (dashboards — all three)      │
   └──────────────────────────────────────────────────┘
 ```
+
+The frontend is a pure SPA (static files served by nginx) that communicates directly with the API Gateway. JWTs are stored in `localStorage`; no server-side session or cookie management is required.
 
 ### Services
 
@@ -104,7 +106,7 @@ Auth Service SecurityConfig  ←  "Load the user, check the password, issue a JW
 - **Lombok** — boilerplate reduction
 
 ### Frontend
-- **React 19** + **React Router v7** — file-based routing with SSR support
+- **React 19** + **React Router v7** — SPA mode, file-based routing
 - **TypeScript 5** — type safety
 - **Vite 7** — build tooling
 - **Tailwind CSS v4** — utility-first styling
@@ -392,6 +394,7 @@ All services accept these environment variables (with defaults for local dev):
 | JWT_SECRET  | 404E635266...   | HS256 secret key (hex)           |
 | LOKI_HOST   | loki            | Loki hostname (log shipping)     |
 | TEMPO_HOST  | tempo           | Tempo hostname (trace shipping)  |
+| VITE_API_URL | http://localhost:8080 | API Gateway URL (Vite build arg for web) |
 
 ---
 

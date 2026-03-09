@@ -329,12 +329,11 @@ services:
     build:
       context: ./web
       dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:8080
     container_name: web
     ports:
       - "3001:3000"
-    environment:
-      - PORT=3000
-      - VITE_API_URL=http://localhost:8080
     depends_on:
       - api-gateway
 
