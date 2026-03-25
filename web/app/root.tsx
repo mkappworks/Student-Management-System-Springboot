@@ -9,6 +9,14 @@ import {
 
 import type { Route } from "./+types/root"
 import "./app.css"
+import { getSession, refreshTokens } from "~/lib/auth"
+
+export async function clientLoader() {
+  if (!getSession()) {
+    await refreshTokens() // no-op if no sms_refresh cookie; restores token after page reload
+  }
+  return null
+}
 
 export function Layout({ children }: { children: React.ReactNode }) {
   return (

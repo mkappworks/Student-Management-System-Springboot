@@ -1,10 +1,13 @@
 import { redirect } from "react-router"
-import { API_BASE_URL, COOKIE_NAME, REFRESH_COOKIE_NAME, USER_ID_COOKIE } from "./constants"
+import { API_BASE_URL, COOKIE_NAME, USER_ID_COOKIE } from "./constants"
 import type { AuthResponse, Session } from "~/types/api"
 
+// In-memory storage — survives navigation but cleared on page reload.
+// Restored on reload via silent refresh (see root.tsx clientLoader).
+let _accessToken: string | null = null
+
 function getToken(): string | null {
-  if (typeof localStorage === "undefined") return null
-  return localStorage.getItem(COOKIE_NAME)
+  return _accessToken
 }
 
 function getUserId(): number | undefined {
@@ -53,30 +56,31 @@ export function requireRole(roles: string[]): Session {
 }
 
 export function saveAuth(authResponse: AuthResponse, uid?: number): void {
-  if (typeof localStorage === "undefined") return
-  localStorage.setItem(COOKIE_NAME, authResponse.accessToken)
-  localStorage.setItem(REFRESH_COOKIE_NAME, authResponse.refreshToken)
-  if (uid !== undefined) {
-    localStorage.setItem(USER_ID_COOKIE, String(uid))
+  _accessToken = authResponse.accessToken
+  // COOKIE_NAME kept in localStorage only for legacy compat during transition;
+  // the authoritative source is now _accessToken in memory.
+  if (typeof localStorage !== "undefined") {
+    localStorage.setItem(COOKIE_NAME, authResponse.accessToken)
+    if (uid !== undefined) {
+      localStorage.setItem(USER_ID_COOKIE, String(uid))
+    }
   }
 }
 
 export function clearAuth(): void {
-  if (typeof localStorage === "undefined") return
-  localStorage.removeItem(COOKIE_NAME)
-  localStorage.removeItem(REFRESH_COOKIE_NAME)
-  localStorage.removeItem(USER_ID_COOKIE)
+  _accessToken = null
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem(COOKIE_NAME)
+    localStorage.removeItem(USER_ID_COOKIE)
+  }
 }
 
 export async function refreshTokens(): Promise<string | null> {
-  const refreshToken = localStorage.getItem(REFRESH_COOKIE_NAME)
-  if (!refreshToken) return null
-
   try {
     const res = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
       method: "POST",
+      credentials: "include", // browser sends HttpOnly sms_refresh cookie automatically
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ refreshToken }),
     })
     if (!res.ok) {
       clearAuth()
@@ -84,7 +88,7 @@ export async function refreshTokens(): Promise<string | null> {
     }
     const body = await res.json()
     const authRes = body.data as AuthResponse
-    saveAuth(authRes)
+    _accessToken = authRes.accessToken
     return authRes.accessToken
   } catch {
     clearAuth()
