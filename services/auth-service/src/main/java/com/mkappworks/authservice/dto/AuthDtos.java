@@ -15,6 +15,7 @@ public class AuthDtos {
             @NotBlank @Email String email,
             @NotBlank @Size(min = 8) String password,
             @NotNull Role role,
+            // Cross-service link to the corresponding student/teacher record; nullable because ADMIN has none.
             UUID referenceId
     ) {}
 
@@ -23,6 +24,8 @@ public class AuthDtos {
             @NotBlank String password
     ) {}
 
+    // refreshToken is included in the body for backward compatibility with older clients;
+    // the primary delivery channel is the HttpOnly cookie set by AuthController.
     public record AuthResponse(
             String accessToken,
             String refreshToken,

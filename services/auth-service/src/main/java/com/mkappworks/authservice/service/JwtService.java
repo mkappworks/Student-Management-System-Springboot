@@ -28,16 +28,22 @@ public class JwtService {
     @Value("${application.security.jwt.refresh-token.expiration}")
     private long refreshExpiration;
 
+    // The role claim is embedded in the access token so downstream services can authorise requests
+    // without a database lookup — they read the claim directly from the validated JWT.
     public String generateAccessToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("role", userDetails.getAuthorities().iterator().next().getAuthority().replace("ROLE_", ""));
         return buildToken(claims, userDetails.getUsername(), jwtExpiration);
     }
 
+    // Refresh tokens carry no extra claims intentionally — only the subject (username) is needed
+    // to re-authenticate and issue a fresh access token.
     public String generateRefreshToken(UserDetails userDetails) {
         return buildToken(new HashMap<>(), userDetails.getUsername(), refreshExpiration);
     }
 
+    // Signs the token with HMAC-SHA using the shared JWT_SECRET; the same key must be present
+    // on the api-gateway and every downstream service for signature verification.
     private String buildToken(Map<String, Object> extraClaims, String subject, long expiration) {
         return Jwts.builder()
                 .claims(extraClaims)
@@ -48,6 +54,7 @@ public class JwtService {
                 .compact();
     }
 
+    // Two conditions must both hold: the subject must match the expected user, and the token must not be expired.
     public boolean isTokenValid(String token, UserDetails userDetails) {
         final String username = extractUsername(token);
         return username.equals(userDetails.getUsername()) && !isTokenExpired(token);

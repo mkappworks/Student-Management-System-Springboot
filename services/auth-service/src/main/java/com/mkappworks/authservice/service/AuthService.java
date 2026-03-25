@@ -22,6 +22,7 @@ public class AuthService {
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;
 
+    // Username is checked before email so the error message is deterministic when both collide.
     @Transactional
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.username())) {
@@ -58,6 +59,8 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest request) {
         try {
+            // authenticate() throws AuthenticationException on bad credentials; we rethrow as
+            // IllegalArgumentException so the global handler returns a 400 instead of a 500.
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.username(), request.password())
             );
@@ -82,6 +85,8 @@ public class AuthService {
         );
     }
 
+    // Token rotation: every refresh call invalidates the old refresh token by issuing a new pair.
+    // This limits the window of exposure if a refresh token is stolen.
     public AuthResponse refreshToken(RefreshRequest request) {
         String username = jwtService.extractUsername(request.refreshToken());
         User user = userRepository.findByUsername(username)

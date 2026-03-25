@@ -37,8 +37,10 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private Role role;
 
+    // Cross-service foreign key: points to the corresponding record in student-service or teacher-service.
+    // Null for ADMIN users who have no domain record in another service.
     @Column(name = "reference_id")
-    private UUID referenceId; // Links to student/teacher/admin id in other services
+    private UUID referenceId;
 
     @Column(nullable = false)
     private boolean enabled = true;
@@ -49,6 +51,8 @@ public class User implements UserDetails {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // Timestamps are managed explicitly here rather than via @CreationTimestamp/@UpdateTimestamp
+    // to keep the behaviour visible and independent of Hibernate-specific annotations.
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -60,6 +64,7 @@ public class User implements UserDetails {
         updatedAt = LocalDateTime.now();
     }
 
+    // Spring Security's hasRole("ADMIN") internally prepends "ROLE_", so we must store it with the prefix here.
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return List.of(new SimpleGrantedAuthority("ROLE_" + role.name()));
