@@ -33,7 +33,7 @@ A production-ready **Spring Boot 3.5 / Java 21** microservices application for m
   └──────────────────────────────────────────────────┘
 ```
 
-The frontend is a pure SPA (static files served by nginx) that communicates directly with the API Gateway. JWTs are stored in `localStorage`; no server-side session or cookie management is required.
+The frontend is a pure SPA (static files served by nginx) that communicates directly with the API Gateway. Auth tokens use a two-layer model: the **refresh token** is stored in an HttpOnly cookie (set by the server, inaccessible to JS), while the **access token** lives in a JS memory variable and is restored on page reload via a silent refresh call.
 
 ### Services
 
@@ -86,6 +86,22 @@ Auth Service SecurityConfig  ←  "Load the user, check the password, issue a JW
 | Knows about users? | No                 | Yes (via `UserRepository`)           |
 | JWT role           | Validates tokens   | Creates tokens                       |
 
+### Frontend Token Storage
+
+| Token         | Storage                    | Lifetime | Notes                                              |
+|---------------|----------------------------|----------|----------------------------------------------------|
+| Access token  | JS memory variable         | 24h      | Lost on page reload; restored via silent refresh   |
+| Refresh token | `sms_refresh` HttpOnly cookie | 7d    | Set by server; JS cannot read or steal it          |
+| User ID       | `localStorage` (`sms_uid`) | Session  | Non-sensitive; used to identify the logged-in user |
+
+**Auth flow:**
+1. Login/Register → backend sets `sms_refresh` HttpOnly cookie; frontend stores `accessToken` in memory
+2. Page reload → `root.tsx` `clientLoader` calls `POST /api/v1/auth/refresh` with `credentials: 'include'`; browser sends the cookie automatically; new access token stored in memory
+3. API request → `Authorization: Bearer <in-memory token>`; on 401, silent refresh is attempted before redirecting to login
+4. Logout → `POST /api/v1/auth/logout` clears the HttpOnly cookie; memory and `localStorage` cleared client-side
+
+> **CORS note:** `allowedOrigins: "*"` is incompatible with `allowCredentials: true`. The API Gateway uses `allowedOriginPatterns` with the `CORS_ALLOWED_ORIGINS` env var (default: `http://localhost:5173,http://localhost:3001`). Set this to your frontend domain(s) in production.
+
 ---
 
 ## Technology Stack
@@ -97,12 +113,14 @@ Auth Service SecurityConfig  ←  "Load the user, check the password, issue a JW
 - **PostgreSQL 16** — separate database per service
 - **Flyway** — database migrations
 - **JWT (JJWT 0.12.3)** — stateless authentication
+- **springdoc-openapi 2.8.3** — interactive Swagger UI per service
 - **Docker Compose** — multi-container orchestration
 - **Prometheus** — metrics scraping and storage (TSDB, 7-day retention)
 - **Loki** — log aggregation (shipped via `loki-logback-appender`)
 - **Tempo** — distributed tracing (receives spans via Zipkin protocol)
 - **Grafana** — unified dashboards for metrics, logs, and traces
 - **Testcontainers** — integration tests with real PostgreSQL
+- **JaCoCo 0.8.11** — code coverage reports and 60% line-coverage enforcement
 - **Lombok** — boilerplate reduction
 
 ### Frontend
@@ -183,8 +201,7 @@ make web-dev           # http://localhost:5173
 curl -X POST http://localhost:8080/api/v1/auth/register \
   -H "Content-Type: application/json" \
   -d '{
-    "firstName": "System",
-    "lastName": "Admin",
+    "username": "admin",
     "email": "admin@sms.com",
     "password": "Admin@1234",
     "role": "ADMIN"
@@ -195,8 +212,8 @@ curl -X POST http://localhost:8080/api/v1/auth/register \
 ```bash
 TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email":"admin@sms.com","password":"Admin@1234"}' \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)['accessToken'])")
+  -d '{"username":"admin","password":"Admin@1234"}' \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['data']['accessToken'])")
 
 echo "Token: $TOKEN"
 ```
@@ -326,6 +343,22 @@ The full observability stack (Prometheus + Loki + Tempo + Grafana) starts automa
 | Tempo      | http://localhost:3200   | None             |
 | Grafana    | http://localhost:3000   | admin / admin123 |
 
+### API Documentation (Swagger UI)
+
+Each domain service exposes interactive docs at `http://localhost:{port}/swagger-ui.html` and machine-readable OpenAPI JSON at `/v3/api-docs`.
+
+| Service              | Swagger UI                              |
+|----------------------|-----------------------------------------|
+| auth-service         | http://localhost:8090/swagger-ui.html   |
+| student-service      | http://localhost:8081/swagger-ui.html   |
+| teacher-service      | http://localhost:8082/swagger-ui.html   |
+| module-service       | http://localhost:8086/swagger-ui.html   |
+| grade-service        | http://localhost:8083/swagger-ui.html   |
+| enrollment-service   | http://localhost:8084/swagger-ui.html   |
+| notification-service | http://localhost:8085/swagger-ui.html   |
+
+> The API Gateway is intentionally excluded — it is a router, not a domain API. Browse each service directly for its full endpoint list.
+
 ### Observability Stack
 
 | Pillar  | Tool       | What it collects                                          | Stored in                | Retention |
@@ -366,15 +399,22 @@ Grafana is fully pre-provisioned — no manual setup required.
 ## Running Tests
 
 ```bash
-# Unit tests (all services)
-mvn test
+# Unit tests (all services, skip Docker-dependent integration tests)
+mvn -f services/pom.xml test -Dsurefire.excludes="**/*IntegrationTest.java"
 
-# Single service
-cd student-service && mvn test
+# Unit tests for a single service
+mvn -f services/pom.xml test -pl auth-service -Dsurefire.excludes="**/*IntegrationTest.java"
 
-# With coverage report
-mvn test && open target/site/jacoco/index.html
+# Integration tests (requires Docker for Testcontainers)
+mvn -f services/pom.xml verify
+
+# Coverage report + enforcement (60% line coverage minimum)
+# Reports generated at services/<name>/target/site/jacoco/index.html
+mvn -f services/pom.xml verify -Dsurefire.excludes="**/*IntegrationTest.java"
+open services/auth-service/target/site/jacoco/index.html
 ```
+
+Coverage is enforced at **60% line coverage** during the `verify` phase. The check excludes `*Application`, `config/`, `dto/`, `entity/`, and `model/` packages. `common-lib` is excluded from coverage checks (it is tested indirectly through service integration tests).
 
 ---
 

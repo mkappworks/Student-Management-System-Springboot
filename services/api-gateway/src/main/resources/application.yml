@@ -49,10 +49,12 @@ spring:
       globalcors:
         cors-configurations:
           '[/**]':
-            allowedOrigins: "*"
+            allowedOriginPatterns:
+              - "${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3001}"
             allowedMethods: "GET,POST,PUT,PATCH,DELETE,OPTIONS"
             allowedHeaders: "*"
             exposedHeaders: "Authorization"
+            allowCredentials: true
 
 eureka:
   client:
