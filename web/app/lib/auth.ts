@@ -1,5 +1,5 @@
 import { redirect } from "react-router"
-import { COOKIE_NAME, REFRESH_COOKIE_NAME, USER_ID_COOKIE } from "./constants"
+import { API_BASE_URL, COOKIE_NAME, REFRESH_COOKIE_NAME, USER_ID_COOKIE } from "./constants"
 import type { AuthResponse, Session } from "~/types/api"
 
 function getToken(): string | null {
@@ -66,4 +66,28 @@ export function clearAuth(): void {
   localStorage.removeItem(COOKIE_NAME)
   localStorage.removeItem(REFRESH_COOKIE_NAME)
   localStorage.removeItem(USER_ID_COOKIE)
+}
+
+export async function refreshTokens(): Promise<string | null> {
+  const refreshToken = localStorage.getItem(REFRESH_COOKIE_NAME)
+  if (!refreshToken) return null
+
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/v1/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    })
+    if (!res.ok) {
+      clearAuth()
+      return null
+    }
+    const body = await res.json()
+    const authRes = body.data as AuthResponse
+    saveAuth(authRes)
+    return authRes.accessToken
+  } catch {
+    clearAuth()
+    return null
+  }
 }

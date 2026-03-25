@@ -13,6 +13,11 @@
     <packaging>jar</packaging>
     <name>Common Library</name>
 
+    <properties>
+        <!-- common-lib is a shared library; its classes are tested via service integration tests -->
+        <jacoco.skip>true</jacoco.skip>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>

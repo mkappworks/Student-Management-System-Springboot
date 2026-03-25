@@ -1,6 +1,7 @@
 import { redirect } from "react-router"
-import { API_BASE_URL, COOKIE_NAME, REFRESH_COOKIE_NAME } from "./constants"
-import type { ApiResponse, AuthResponse } from "~/types/api"
+import { API_BASE_URL } from "./constants"
+import type { ApiResponse } from "~/types/api"
+import { clearAuth, refreshTokens } from "~/lib/auth"
 
 export class ApiError extends Error {
   constructor(
@@ -27,6 +28,24 @@ async function apiFetch<T>(
     ...options,
     headers,
   })
+
+  if (response.status === 401 && token) {
+    const newToken = await refreshTokens()
+    if (newToken) {
+      const retry = await fetch(`${API_BASE_URL}${path}`, {
+        ...options,
+        headers: { ...headers, Authorization: `Bearer ${newToken}` },
+      })
+      if (retry.ok) {
+        if (retry.status === 204) return undefined as T
+        const retryBody = (await retry.json()) as ApiResponse<T>
+        if (!retryBody.success) throw new ApiError(retry.status, retryBody.message)
+        return retryBody.data
+      }
+    }
+    clearAuth()
+    throw redirect("/login")
+  }
 
   if (!response.ok) {
     let message = `HTTP ${response.status}`
